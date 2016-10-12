@@ -196,9 +196,11 @@ object CreateServer extends Logging {
 
     val kryo = KryoInstantiator.newKryoInjection
 
+    val modelsFromRep = kryo.invert(modeldata.get(engineInstance.id).get.models)
+
     val modelsFromEngineInstance =
-      kryo.invert(modeldata.get(engineInstance.id).get.models).get.
-      asInstanceOf[Seq[Any]]
+      modelsFromRep.get.
+        asInstanceOf[Seq[Any]]
 
     val batch = if (engineInstance.batch.nonEmpty) {
       s"${engineInstance.engineFactory} (${engineInstance.batch})"

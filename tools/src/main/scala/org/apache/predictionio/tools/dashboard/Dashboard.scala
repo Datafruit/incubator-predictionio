@@ -18,32 +18,27 @@
 
 package org.apache.predictionio.tools.dashboard
 
-import com.typesafe.config.ConfigFactory
-import org.apache.predictionio.authentication.KeyAuthentication
-import org.apache.predictionio.configuration.SSLConfiguration
-import org.apache.predictionio.data.storage.Storage
-import spray.can.server.ServerSettings
-import spray.routing.directives.AuthMagnet
-import scala.concurrent.{Future, ExecutionContext}
-import akka.actor.{ActorContext, Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorContext, ActorSystem, Props}
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
 import com.github.nscala_time.time.Imports.DateTime
 import grizzled.slf4j.Logging
+import org.apache.predictionio.data.storage.Storage
 import spray.can.Http
-import spray.http._
+import spray.can.server.ServerSettings
 import spray.http.MediaTypes._
+import spray.http._
 import spray.routing._
-import spray.routing.authentication.{Authentication, UserPass, BasicAuth}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 case class DashboardConfig(
   ip: String = "localhost",
   port: Int = 9000)
 
-object Dashboard extends Logging with SSLConfiguration {
+object Dashboard extends Logging {
   def main(args: Array[String]): Unit = {
     val parser = new scopt.OptionParser[DashboardConfig]("Dashboard") {
       opt[String]("ip") action { (x, c) =>
@@ -65,13 +60,11 @@ object Dashboard extends Logging with SSLConfiguration {
       system.actorOf(Props(classOf[DashboardActor], dc), "dashboard")
     implicit val timeout = Timeout(5.seconds)
     val settings = ServerSettings(system)
-    val serverConfig = ConfigFactory.load("server.conf")
-    val sslEnforced = serverConfig.getBoolean("org.apache.predictionio.server.ssl-enforced")
     IO(Http) ? Http.Bind(
       service,
       interface = dc.ip,
       port = dc.port,
-      settings = Some(settings.copy(sslEncryption = sslEnforced)))
+      settings = Some(settings.copy(sslEncryption = false)))
     system.awaitTermination
   }
 }
@@ -83,7 +76,7 @@ class DashboardActor(
   def receive: Actor.Receive = runRoute(dashboardRoute)
 }
 
-trait DashboardService extends HttpService with KeyAuthentication with CORSSupport {
+trait DashboardService extends HttpService with CORSSupport {
 
   implicit def executionContext: ExecutionContext = actorRefFactory.dispatcher
   val dc: DashboardConfig
@@ -92,17 +85,15 @@ trait DashboardService extends HttpService with KeyAuthentication with CORSSuppo
   val serverStartTime = DateTime.now
   val dashboardRoute =
     path("") {
-      authenticate(withAccessKeyFromFile) { request =>
-        get {
-          respondWithMediaType(`text/html`) {
-            complete {
-              val completedInstances = evaluationInstances.getCompleted
-              html.index(
-                dc,
-                serverStartTime,
-                pioEnvVars,
-                completedInstances).toString
-            }
+      get {
+        respondWithMediaType(`text/html`) {
+          complete {
+            val completedInstances = evaluationInstances.getCompleted
+            html.index(
+              dc,
+              serverStartTime,
+              pioEnvVars,
+              completedInstances).toString
           }
         }
       }

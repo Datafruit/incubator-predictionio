@@ -18,9 +18,7 @@
 
 package org.apache.predictionio.workflow
 
-import java.io.PrintWriter
-import java.io.Serializable
-import java.io.StringWriter
+import java.io.{PrintWriter, Serializable, StringWriter}
 import java.util.concurrent.TimeUnit
 
 import akka.actor._
@@ -30,24 +28,12 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.github.nscala_time.time.Imports.DateTime
 import com.twitter.bijection.Injection
-import com.twitter.chill.KryoBase
-import com.twitter.chill.KryoInjection
-import com.twitter.chill.ScalaKryoInstantiator
-import com.typesafe.config.ConfigFactory
+import com.twitter.chill.{KryoBase, KryoInjection, ScalaKryoInstantiator}
 import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer
 import grizzled.slf4j.Logging
-import org.apache.predictionio.authentication.KeyAuthentication
-import org.apache.predictionio.configuration.SSLConfiguration
-import org.apache.predictionio.controller.Engine
-import org.apache.predictionio.controller.Params
-import org.apache.predictionio.controller.Utils
-import org.apache.predictionio.controller.WithPrId
-import org.apache.predictionio.core.BaseAlgorithm
-import org.apache.predictionio.core.BaseServing
-import org.apache.predictionio.core.Doer
-import org.apache.predictionio.data.storage.EngineInstance
-import org.apache.predictionio.data.storage.EngineManifest
-import org.apache.predictionio.data.storage.Storage
+import org.apache.predictionio.controller.{Engine, Params, Utils, WithPrId}
+import org.apache.predictionio.core.{BaseAlgorithm, BaseServing, Doer}
+import org.apache.predictionio.data.storage.{EngineInstance, EngineManifest, Storage}
 import org.apache.predictionio.workflow.JsonExtractorOption.JsonExtractorOption
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -58,17 +44,12 @@ import spray.http.MediaTypes._
 import spray.http._
 import spray.httpx.Json4sSupport
 import spray.routing._
-import spray.routing.authentication.{UserPass, BasicAuth}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.future
+import scala.concurrent.{Future, future}
 import scala.language.existentials
-import scala.util.Failure
-import scala.util.Random
-import scala.util.Success
-import scalaj.http.HttpOptions
+import scala.util.{Failure, Random, Success}
 
 class KryoInstantiator(classLoader: ClassLoader) extends ScalaKryoInstantiator {
   override def newKryo(): KryoBase = {
@@ -270,15 +251,13 @@ class MasterActor (
     sc: ServerConfig,
     engineInstance: EngineInstance,
     engineFactoryName: String,
-    manifest: EngineManifest) extends Actor with SSLConfiguration with KeyAuthentication {
+    manifest: EngineManifest) extends Actor {
   val log = Logging(context.system, this)
   implicit val system = context.system
   var sprayHttpListener: Option[ActorRef] = None
   var currentServerActor: Option[ActorRef] = None
   var retry = 3
-  val serverConfig = ConfigFactory.load("server.conf")
-  val sslEnforced = serverConfig.getBoolean("org.apache.predictionio.server.ssl-enforced")
-  val protocol = if (sslEnforced) "https://" else "http://"
+  val protocol = "http://"
 
   def undeploy(ip: String, port: Int): Unit = {
     val serverUrl = s"${protocol}${ip}:${port}"
@@ -286,8 +265,6 @@ class MasterActor (
       s"Undeploying any existing engine instance at $serverUrl")
     try {
       val code = scalaj.http.Http(s"$serverUrl/stop")
-        .option(HttpOptions.allowUnsafeSSL)
-        .param(ServerKey.param, ServerKey.get)
         .method("POST").asString.code
       code match {
         case 200 => Unit
@@ -324,7 +301,7 @@ class MasterActor (
           actor,
           interface = sc.ip,
           port = sc.port,
-          settings = Some(settings.copy(sslEncryption = sslEnforced)))
+          settings = Some(settings.copy(sslEncryption = false)))
       } getOrElse {
         log.error("Cannot bind a non-existing server backend.")
       }
@@ -353,7 +330,7 @@ class MasterActor (
             actor,
             interface = sc.ip,
             port = sc.port,
-            settings = Some(settings.copy(sslEncryption = sslEnforced)))
+            settings = Some(settings.copy(sslEncryption = false)))
           currentServerActor.get ! Kill
           currentServerActor = Some(actor)
         } getOrElse {
@@ -419,7 +396,7 @@ class ServerActor[Q, P](
     val algorithmsParams: Seq[Params],
     val models: Seq[Any],
     val serving: BaseServing[Q, P],
-    val servingParams: Params) extends Actor with HttpService with KeyAuthentication {
+    val servingParams: Params) extends Actor with HttpService{
   val serverStartTime = DateTime.now
   val log = Logging(context.system, this)
 
@@ -649,24 +626,20 @@ class ServerActor[Q, P](
       }
     } ~
     path("reload") {
-      authenticate(withAccessKeyFromFile) { request =>
-        post {
-          complete {
-            context.actorSelection("/user/master") ! ReloadServer()
-            "Reloading..."
-          }
+      post {
+        complete {
+          context.actorSelection("/user/master") ! ReloadServer()
+          "Reloading..."
         }
       }
     } ~
     path("stop") {
-      authenticate(withAccessKeyFromFile) { request =>
-        post {
-          complete {
-            context.system.scheduler.scheduleOnce(1.seconds) {
-              context.actorSelection("/user/master") ! StopServer()
-            }
-            "Shutting down..."
+      post {
+        complete {
+          context.system.scheduler.scheduleOnce(1.seconds) {
+            context.actorSelection("/user/master") ! StopServer()
           }
+          "Shutting down..."
         }
       }
     } ~

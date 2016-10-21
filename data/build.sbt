@@ -40,8 +40,10 @@ libraryDependencies ++= Seq(
   "org.apache.zookeeper"    % "zookeeper"      % "3.4.7"
     exclude("org.slf4j", "slf4j-api")
     exclude("org.slf4j", "slf4j-log4j12"),
-  "org.apache.spark"       %% "spark-core"     % sparkVersion.value % "provided",
-  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value % "provided",
+//  "org.apache.spark"       %% "spark-core"     % sparkVersion.value % "provided",
+//  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value % "provided",
+  "org.apache.spark"       %% "spark-core"     % sparkVersion.value,
+  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value,
   "org.clapper"            %% "grizzled-slf4j" % "1.0.2",
   "org.elasticsearch"       % "elasticsearch"  % elasticsearchVersion.value,
   "org.json4s"             %% "json4s-native"  % json4sVersion.value,

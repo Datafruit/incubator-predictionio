@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
   "io.spray"               %% "spray-can"      % "1.3.3",
   "io.spray"               %% "spray-client"  % "1.3.3",
   "io.spray"               %% "spray-testkit"  % "1.3.3" % "test",
+  "org.apache.lucene" % "lucene-core" % "5.3.1",
   "mysql"                   % "mysql-connector-java" % "5.1.37" % "optional",
   "org.apache.hadoop"       % "hadoop-common"  % "2.6.2"
     exclude("javax.servlet", "servlet-api"),

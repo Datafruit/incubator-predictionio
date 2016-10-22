@@ -27,16 +27,7 @@ class LEventsSpec extends Specification with TestEvents {
   PredictionIO Storage LEvents Specification
 
     Events can be implemented by:
-    - HBLEvents ${hbEvents}
     - JDBCLEvents ${jdbcLEvents}
-
-  """
-
-  def hbEvents = sequential ^ s2"""
-
-    HBLEvents should
-    - behave like any LEvents implementation ${events(hbDO)}
-    - (table cleanup) ${Step(StorageTestUtils.dropHBaseNamespace(dbName))}
 
   """
 

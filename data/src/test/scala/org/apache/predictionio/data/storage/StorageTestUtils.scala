@@ -18,26 +18,12 @@
 
 package org.apache.predictionio.data.storage
 
-import org.apache.predictionio.data.storage.hbase.HBLEvents
 import scalikejdbc._
 
 object StorageTestUtils {
   val hbaseSourceName = "HBASE"
   val jdbcSourceName = "PGSQL"
 
-  def dropHBaseNamespace(namespace: String): Unit = {
-    val eventDb = Storage.getDataObject[LEvents](hbaseSourceName, namespace)
-      .asInstanceOf[HBLEvents]
-    val admin = eventDb.client.admin
-    val tableNames = admin.listTableNamesByNamespace(namespace)
-    tableNames.foreach { name =>
-      admin.disableTable(name)
-      admin.deleteTable(name)
-    }
-
-    //Only empty namespaces (no tables) can be removed.
-    admin.deleteNamespace(namespace)
-  }
 
   def dropJDBCTable(table: String): Unit = DB autoCommit { implicit s =>
     SQL(s"drop table $table").execute().apply()

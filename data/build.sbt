@@ -25,16 +25,16 @@ libraryDependencies ++= Seq(
   "io.spray"               %% "spray-testkit"  % "1.3.3" % "test",
   "org.apache.lucene" % "lucene-core" % "5.3.1",
   "mysql"                   % "mysql-connector-java" % "5.1.37" % "optional",
-  "org.apache.hadoop"       % "hadoop-common"  % "2.6.2"
+  "org.apache.hadoop"       % "hadoop-common"  % "2.7.2"
     exclude("javax.servlet", "servlet-api"),
+  "org.apache.hadoop"       % "hadoop-hdfs"    % "2.7.2",
   "org.apache.zookeeper"    % "zookeeper"      % "3.4.7"
     exclude("org.slf4j", "slf4j-api")
     exclude("org.slf4j", "slf4j-log4j12"),
-//  "org.apache.spark"       %% "spark-core"     % sparkVersion.value % "provided",
-//  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value % "provided",
-  "org.apache.spark"       %% "spark-core"     % sparkVersion.value,
-  "org.apache.spark"       %% "spark-core"     % sparkVersion.value,
-  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value,
+  "org.apache.spark"       %% "spark-core"     % sparkVersion.value % "provided",
+  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value % "provided",
+//  "org.apache.spark"       %% "spark-core"     % sparkVersion.value,
+//  "org.apache.spark"       %% "spark-sql"      % sparkVersion.value,
   "org.clapper"            %% "grizzled-slf4j" % "1.0.2",
   "org.json4s"             %% "json4s-native"  % json4sVersion.value,
   "org.json4s"             %% "json4s-ext"     % json4sVersion.value,

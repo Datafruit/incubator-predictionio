@@ -19,15 +19,17 @@
 package org.apache.predictionio.data.storage.druid
 
 import grizzled.slf4j.Logging
-import org.apache.predictionio.data.storage.{BaseStorageClient, StorageClientConfig}
+import org.apache.predictionio.data.storage.{BaseStorageClient, StorageClientConfig, StorageClientException}
 
 /**
   */
-class StorageClient extends BaseStorageClient with Logging {
+class StorageClient(val config: StorageClientConfig) extends BaseStorageClient with Logging {
   override val prefix: String = "DRUID"
 
-  override val config: StorageClientConfig = null
+  if (!config.properties.contains("URL")) {
+    throw new StorageClientException("The URL variable is not set!", null)
+  }
 
-  override val client: AnyRef = null
+  override val client = config.properties("URL")
 
 }

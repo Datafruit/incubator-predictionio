@@ -18,10 +18,9 @@
 
 package org.apache.predictionio.data.storage
 
-import java.lang.reflect.InvocationTargetException
-
 import grizzled.slf4j.Logging
 import org.apache.predictionio.annotation.DeveloperApi
+import org.apache.predictionio.data.storage.outter.OEvents
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.existentials
@@ -142,7 +141,6 @@ object Storage extends Logging {
   /** Reference to the app data repository. */
   private val EventDataRepository = "EVENTDATA"
   private val ModelDataRepository = "MODELDATA"
-  private val MetaDataRepository = "METADATA"
 
   private val repositoriesPrefix = "PIO_STORAGE_REPOSITORIES"
 
@@ -160,14 +158,6 @@ object Storage extends Logging {
     warn("There is no properly configured repository.")
   }
 
-  private val requiredRepositories = Seq(MetaDataRepository)
-
-  requiredRepositories foreach { r =>
-    if (!repositoryKeys.contains(r)) {
-      error(s"Required repository (${r}) configuration is missing.")
-      errors += 1
-    }
-  }
   private val repositoriesToDataObjectMeta: Map[String, DataObjectMeta] =
     repositoryKeys.map(r =>
       try {
@@ -273,6 +263,13 @@ object Storage extends Logging {
     getPDataObject[T](repoDOSourceName, repoDOMeta.namespace)
   }
 
+  private[predictionio]
+  def getODataObject[T](repo: String)(implicit tag: TypeTag[T]): T = {
+    val repoDOMeta = repositoriesToDataObjectMeta(repo)
+    val repoDOSourceName = repoDOMeta.sourceName
+    getDataObject[T](repoDOSourceName, repoDOMeta.namespace, true)
+  }
+
   private[predictionio] def getDataObject[T](
       sourceName: String,
       namespace: String,
@@ -336,13 +333,6 @@ object Storage extends Logging {
   }
 
   private[predictionio] def verifyAllDataObjects(): Unit = {
-    info("Verifying Meta Data Backend (Source: " +
-      s"${repositoriesToDataObjectMeta(MetaDataRepository).sourceName})...")
-    getMetaDataEngineManifests()
-    getMetaDataEngineInstances()
-    getMetaDataEvaluationInstances()
-    getMetaDataApps()
-    getMetaDataAccessKeys()
     info("Verifying Model Data Backend (Source: " +
       s"${repositoriesToDataObjectMeta(ModelDataRepository).sourceName})...")
     getModelDataModels()
@@ -360,24 +350,6 @@ object Storage extends Logging {
     eventsDb.close()
   }
 
-  private[predictionio] def getMetaDataEngineManifests(): EngineManifests =
-    getDataObjectFromRepo[EngineManifests](MetaDataRepository)
-
-  private[predictionio] def getMetaDataEngineInstances(): EngineInstances =
-    getDataObjectFromRepo[EngineInstances](MetaDataRepository)
-
-  private[predictionio] def getMetaDataEvaluationInstances(): EvaluationInstances =
-    getDataObjectFromRepo[EvaluationInstances](MetaDataRepository)
-
-  private[predictionio] def getMetaDataApps(): Apps =
-    getDataObjectFromRepo[Apps](MetaDataRepository)
-
-  private[predictionio] def getMetaDataAccessKeys(): AccessKeys =
-    getDataObjectFromRepo[AccessKeys](MetaDataRepository)
-
-  private[predictionio] def getMetaDataChannels(): Channels =
-    getDataObjectFromRepo[Channels](MetaDataRepository)
-
   private[predictionio] def getModelDataModels(): Models =
     getDataObjectFromRepo[Models](ModelDataRepository)
 
@@ -392,6 +364,10 @@ object Storage extends Logging {
     */
   def getPEvents(): PEvents =
     getPDataObject[PEvents](EventDataRepository)
+
+  def getOEvents(): OEvents =
+    getODataObject[OEvents](EventDataRepository)
+
 
   def config: Map[String, Map[String, Map[String, String]]] = Map(
     "sources" -> s2cm.toMap.map { case (source, clientMeta) =>
